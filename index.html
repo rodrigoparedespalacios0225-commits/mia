@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Rostisería - Sabores Caseros</title>
+<style>
+  :root{
+    --bg:#faf8f6;
+    --card:#fff;
+    --accent-1:#ffd6d6;
+    --accent-2:#fff3bf;
+    --accent-3:#d0e7ff;
+    --muted:#666;
+    --success:#2f9e44;
+    --danger:#e03131;
+  }
+  *{box-sizing:border-box;font-family:Arial,Helvetica,sans-serif;}
+  body{background:var(--bg);margin:0;padding:24px;display:flex;align-items:flex-start;justify-content:center;min-height:100vh;}
+  .container{width:100%;max-width:1100px;}
+  header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+  .logo{width:60px;height:60px;border-radius:10px;background:linear-gradient(135deg,var(--accent-1),var(--accent-3));display:flex;align-items:center;justify-content:center;font-weight:700;color:#333}
+  h1{margin:0;font-size:20px}
+  .card{background:var(--card);padding:16px;border-radius:12px;box-shadow:0 6px 20px rgba(20,20,30,0.06);margin-bottom:16px}
+  label{font-size:13px;color:var(--muted)}
+  input,button,select{width:100%;padding:8px 10px;border-radius:8px;border:1px solid #ccc;font-size:14px}
+  .btn{cursor:pointer;border:0;background:linear-gradient(90deg,var(--accent-3),var(--accent-2));font-weight:600}
+  .btn.primary{background:linear-gradient(90deg,#6fb3ff,#ffd27a)}
+  .hidden{display:none}
+  .flex{display:flex;gap:8px;align-items:center}
+  .layout{display:grid;grid-template-columns:1fr 330px;gap:12px}
+  .product-list{display:grid;gap:10px}
+  .item{display:flex;gap:12px;align-items:center}
+  .item img{width:90px;height:70px;border-radius:8px;object-fit:cover}
+  .badge{padding:4px 8px;border-radius:999px;font-size:12px}
+  .low{background:#fff1f0;color:var(--danger)}
+  .in-stock{background:#ecfdf5;color:var(--success)}
+  @media (max-width:900px){.layout{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">SC</div>
+    <div>
+      <h1>Rostisería — Sabores Caseros</h1>
+      <div class="muted">Demo funcional con LocalStorage</div>
+    </div>
+  </header>
+  <div id="authCard" class="card">
+    <h3>Iniciar sesión</h3>
+    <input id="loginEmail" placeholder="Correo" type="email"/>
+    <input id="loginPass" placeholder="Contraseña" type="password"/>
+    <button class="btn primary" onclick="doLogin()">Entrar</button>
+    <p>¿No tienes cuenta? <a href="#" onclick="showRegister()">Regístrate</a></p>
+    <div id="registerView" class="hidden">
+      <h3>Registro</h3>
+      <input id="regName" placeholder="Nombres"/>
+      <input id="regLast" placeholder="Apellidos"/>
+      <input id="regEmail" placeholder="Correo" type="email"/>
+      <input id="regPass" placeholder="Contraseña" type="password"/>
+      <button class="btn primary" onclick="doRegister()">Registrar</button>
+      <button class="btn" onclick="showLogin()">Volver</button>
+    </div>
+  </div>
+  <div id="dashboard" class="hidden">
+    <div class="layout">
+      <div>
+        <div class="card">
+          <h3 id="welcomeUser"></h3>
+          <button class="btn" onclick="logout()">Cerrar sesión</button>
+        </div>
+        <div class="card">
+          <h3>Catálogo</h3>
+          <div id="productList" class="product-list"></div>
+        </div>
+      </div>
+      <aside>
+        <div class="card">
+          <h3>Promociones</h3>
+          <label><input type="checkbox" id="fidelCheck" onchange="toggleFidel()"> Cliente fidelidad</label>
+        </div>
+        <div class="card">
+          <h3>Control de insumos</h3>
+          <div id="stockList"></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+<script>
+const LS_USERS='sc_users',LS_SESSION='sc_session',LS_PRODUCTS='sc_products';
+function load(k,f){try{const v=localStorage.getItem(k);return v?JSON.parse(v):f}catch(e){return f}}
+function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
+function getUsers(){return load(LS_USERS,[])};function setUsers(u){save(LS_USERS,u)}
+function getProducts(){return load(LS_PRODUCTS,[])}
+function initProducts(){if(getProducts().length) return;
+  save(LS_PRODUCTS,[{id:1,name:'Pollo a la brasa',price:35,time:40,img:'https://images.unsplash.com/photo-1604908177522-0f4327f7e0c6?w=400',stock:10},
+                     {id:2,name:'Arroz con pollo',price:25,time:30,img:'https://images.unsplash.com/photo-1544025162-d76694265947?w=400',stock:3}])}
+function doRegister(){
+  const u={id:Date.now(),name:regName.value,last:regLast.value,email:regEmail.value.toLowerCase(),pass:regPass.value,fidel:false}
+  let users=getUsers();if(users.some(x=>x.email===u.email)){alert('Ya existe');return}
+  users.push(u);setUsers(users);alert('Registrado');showLogin()
+}
+function doLogin(){
+  const users=getUsers(),u=users.find(x=>x.email===loginEmail.value.toLowerCase()&&x.pass===loginPass.value)
+  if(!u){alert('Credenciales inválidas');return}
+  save(LS_SESSION,{id:u.id});render()
+}
+function logout(){localStorage.removeItem(LS_SESSION);render()}
+function currentUser(){const s=load(LS_SESSION,null);if(!s)return null;return getUsers().find(u=>u.id===s.id)}
+function showRegister(){document.getElementById('registerView').classList.remove('hidden')}
+function showLogin(){document.getElementById('registerView').classList.add('hidden')}
+function toggleFidel(){let u=currentUser();if(!u)return;u.fidel=fidelCheck.checked;setUsers(getUsers().map(x=>x.id===u.id?u:x))}
+function renderProducts(){
+  const list=getProducts(),out=document.getElementById('productList');out.innerHTML=''
+  list.forEach(p=>{
+    const div=document.createElement('div');div.className='item card'
+    div.innerHTML=`<img src="${p.img}"><div><b>${p.name}</b><br>S/ ${p.price} · ${p.time} min<br>
+      <span class="badge ${p.stock<=3?'low':'in-stock'}">${p.stock<=3?'Bajo stock':'En stock'}</span></div>`
+    out.appendChild(div)
+  })
+  document.getElementById('stockList').innerHTML=list.map(p=>`<div>${p.name}: ${p.stock}</div>`).join('')
+}
+function render(){
+  const u=currentUser()
+  if(!u){authCard.classList.remove('hidden');dashboard.classList.add('hidden')}
+  else{authCard.classList.add('hidden');dashboard.classList.remove('hidden')
+    welcomeUser.textContent='Hola, '+u.name
+    fidelCheck.checked=u.fidel;renderProducts()}
+}
+initProducts();render()
+</script>
+</body>
+</html>
